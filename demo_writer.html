@@ -5,6 +5,8 @@
 <script src="base64.js"></script>
 <script>
 
+zxing = ZXing();
+
 function generateBarcode() {
     var text = document.getElementById("input_text").value;
     var format = document.getElementById("input_format").value;
@@ -14,7 +16,7 @@ function generateBarcode() {
     var height = parseInt(document.getElementById("input_height").value);
     var eccLevel = parseInt(document.getElementById("input_ecclevel").value);
     
-    var result = Module.generateBarcode(text, format, charset, margin, width, height, eccLevel);
+    var result = zxing.generateBarcode(text, format, charset, margin, width, height, eccLevel);
     if (result.pixmap) {
         showImage(document.getElementById("write_result"), result.pixmap);
         result.delete();
