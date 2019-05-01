@@ -1,0 +1,129 @@
+<html>
+<head>
+<title>ZXing in Javascript demo</title>
+<script src="zxing_reader.js"></script>
+<script src="base64.js"></script>
+<script>
+
+// https://stackoverflow.com/a/21797381
+// https://stackoverflow.com/a/7261048
+function base64ToUint8Array(uri) { // i.e. base64.b64_decode() in python
+    var binary_string =  window.atob(uri.split(",")[1]);
+    var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes;
+}
+
+zxing = ZXing();
+function scanBarcode(canvasElement, format) {
+    // the emscripten wrapper is [hardcoded](https://github.com/nu-book/zxing-cpp/blob/6476255a432d2fac6b43cf13ddf297016ccea14e/wrappers/wasm/BarcodeReader.cpp#L88) to only support png
+    // but there's an (inefficient) workaround: use a dataURL
+    // https://stackoverflow.com/questions/12796513/html5-canvas-to-png-file
+    var pngData = canvasElement.toDataURL("image/png"); 
+    var fileData = base64ToUint8Array(pngData);
+
+    var buffer = zxing._malloc(fileData.length);
+    zxing.HEAPU8.set(fileData, buffer);
+    var result = zxing.readBarcodeFromPng(buffer, fileData.length, true, format);
+    zxing._free(buffer);
+    return result;
+
+}
+
+</script>
+</head>
+<body>
+<h3>Read barcodes</h3>
+<p>
+This is a simple demo of WebAssembly build (using Emcripten) of <a href="https://github.com/nu-book/zxing-cpp">zxing-cpp</a>
+</p>
+<p></p>
+<div>
+Scan Format: <select id="scan_format">
+<option value="" selected="">Any</option>
+<option value="AZTEC">AZTEC</option>
+<option value="CODABAR">CODABAR</option>
+<option value="CODE_39">CODE_39</option>
+<option value="CODE_93">CODE_93</option>
+<option value="CODE_128">CODE_128</option>
+<option value="DATA_MATRIX">DATA_MATRIX</option>
+<option value="EAN_8">EAN_8</option>
+<option value="EAN_13">EAN_13</option>
+<option value="ITF">ITF</option>
+<option value="PDF_417">PDF_417</option>
+<option value="QR_CODE">QR_CODE</option>
+<option value="UPC_A">UPC_A</option>
+<option value="UPC_E">UPC_E</option>
+</select><br/>
+
+  <canvas id="canvas" hidden></canvas>
+  <div id="output" hidden>
+    <div id="outputMessage">No QR code detected.</div>
+    <div hidden><b>Data:</b> <span id="outputData"></span></div>
+  </div>
+  <script>
+    var video = document.createElement("video");
+    var canvasElement = document.getElementById("canvas");
+    var canvas = canvasElement.getContext("2d");
+    var loadingMessage = document.getElementById("loadingMessage");
+    var outputContainer = document.getElementById("output");
+    var outputMessage = document.getElementById("outputMessage");
+    var outputData = document.getElementById("outputData");
+
+    function drawLine(begin, end, color) {
+      canvas.beginPath();
+      canvas.moveTo(begin.x, begin.y);
+      canvas.lineTo(end.x, end.y);
+      canvas.lineWidth = 4;
+      canvas.strokeStyle = color;
+      canvas.stroke();
+    }
+
+    // Use facingMode: environment to attemt to get the front camera on phones
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+      video.srcObject = stream;
+      video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+      video.play();
+      requestAnimationFrame(tick);
+    });
+
+    function tick() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvasElement.hidden = false;
+        outputContainer.hidden = false;
+
+        canvasElement.height = video.videoHeight;
+        canvasElement.width = video.videoWidth;
+        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+        //var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+
+        var format = document.getElementById("scan_format").value;
+        var code = scanBarcode(canvasElement, format);
+        if (code.error) {
+          outputMessage.hidden = true;
+          outputData.parentElement.hidden = false;
+          outputData.innerText = code.error;
+        } else if(code.format) {
+          /*//TODO: expose detected code coords and draw them
+          drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+          drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+          drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+          drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+          */
+          outputMessage.hidden = true;
+          outputData.parentElement.hidden = false;
+          outputData.innerText = code.text;
+        } else {
+          outputMessage.hidden = false;
+          outputData.parentElement.hidden = true;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+  </script>
+
+</body>
+</html>
