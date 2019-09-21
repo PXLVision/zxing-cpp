@@ -12,11 +12,11 @@ function scanBarcode(file) {
     reader.onloadend = function(evt) {
         var format = document.getElementById("scan_format").value;
         var fileData = new Uint8Array(evt.target.result);
-        showImage(document.getElementById("drop_zone"), fileData);
+        showImage(document.getElementById("drop_zone"), fileData, file.type);
         
         var buffer = zxing._malloc(fileData.length);
         zxing.HEAPU8.set(fileData, buffer);
-        var result = zxing.readBarcodeFromPng(buffer, fileData.length, true, format);
+        var result = zxing.readBarcode(buffer, fileData.length, true, format);
         zxing._free(buffer);
 
         showScanResult(result);
@@ -24,14 +24,15 @@ function scanBarcode(file) {
     reader.readAsArrayBuffer(file);
 }
 
-function showImage(container, fileData) {
+function showImage(container, fileData, fileType) {
+    fileType = fileType || "image/jpeg";
     container.innerHTML = "";
     var img = document.createElement("img");
     img.addEventListener('load', function() {
         container.style.width = img.width + 'px';
         container.style.height = img.height + 'px';
     });
-    img.src = "data:image/png;base64," + uint8ArrayToBase64(fileData);
+    img.src = "data:" + fileType + ";base64," + uint8ArrayToBase64(fileData);
     container.appendChild(img);
 }
 
@@ -87,7 +88,7 @@ function fileSelected(input) {
 }
 
 function clearScanImage() {
-    document.getElementById("drop_zone").innerHTML = "Drag your PNG image here...";
+    document.getElementById("drop_zone").innerHTML = "Drag your image here...";
 }
 
 </script>
@@ -148,9 +149,9 @@ Scan Format: <select id="scan_format" onchange="clearScanImage()">
 <option value="UPC_E">UPC_E</option>
 </select><br/>
 <div id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
-  Drag your PNG image here...
+  Drag your image here...
 </div>
-Or <input type="file" accept=".png" onchange="fileSelected(this)"/>
+Or <input type="file" accept="image/png, image/jpeg" onchange="fileSelected(this)"/>
 <br/>
 <div id="scan_result"></div>
 </body>
