@@ -19,15 +19,15 @@ function base64ToUint8Array(uri) { // i.e. base64.b64_decode() in python
 
 zxing = ZXing();
 function scanBarcode(canvasElement, format) {
-    // the emscripten wrapper is [hardcoded](https://github.com/nu-book/zxing-cpp/blob/6476255a432d2fac6b43cf13ddf297016ccea14e/wrappers/wasm/BarcodeReader.cpp#L88) to only support png
-    // but there's an (inefficient) workaround: use a dataURL
-    // https://stackoverflow.com/questions/12796513/html5-canvas-to-png-file
-    var pngData = canvasElement.toDataURL("image/png"); 
-    var fileData = base64ToUint8Array(pngData);
 
-    var buffer = zxing._malloc(fileData.length);
-    zxing.HEAPU8.set(fileData, buffer);
-    var result = zxing.readBarcodeFromPng(buffer, fileData.length, true, format);
+    var imgWidth = canvasElement.width;
+    var imgHeight = canvasElement.height;
+    var imageData = canvasElement.getContext('2d').getImageData(0, 0, imgWidth, imgHeight);
+    var sourceBuffer = imageData.data;
+
+    var buffer = zxing._malloc(sourceBuffer.byteLength);
+    zxing.HEAPU8.set(sourceBuffer, buffer);
+    var result = zxing.readBarcodeFromPixmap(buffer, imgWidth, imgHeight, true, format);
     zxing._free(buffer);
     return result;
 
@@ -61,7 +61,7 @@ Scan Format: <select id="scan_format">
 
   <canvas id="canvas" hidden></canvas>
   <div id="output" hidden>
-    <div id="outputMessage">No QR code detected.</div>
+    <div id="outputMessage">No barcode detected.</div>
     <div hidden><b>Data:</b> <span id="outputData"></span></div>
   </div>
   <script>
