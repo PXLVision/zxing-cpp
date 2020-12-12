@@ -5,7 +5,10 @@
 <script src="base64.js"></script>
 <script>
 
-zxing = ZXing();
+var zxing = null;
+ZXing().then(function(value) {
+    zxing = value;
+});
 
 function scanBarcode(file) {
     var reader = new FileReader();
@@ -14,12 +17,15 @@ function scanBarcode(file) {
         var fileData = new Uint8Array(evt.target.result);
         showImage(document.getElementById("drop_zone"), fileData, file.type);
         
-        var buffer = zxing._malloc(fileData.length);
-        zxing.HEAPU8.set(fileData, buffer);
-        var result = zxing.readBarcode(buffer, fileData.length, true, format);
-        zxing._free(buffer);
-
-        showScanResult(result);
+        if (zxing != null) {
+            var buffer = zxing._malloc(fileData.length);
+            zxing.HEAPU8.set(fileData, buffer);
+            var result = zxing.readBarcode(buffer, fileData.length, true, format);
+            zxing._free(buffer);
+            showScanResult(result);
+        } else {
+            showScanResult({ error: "ZXing not yet initialized" });
+        }
     }
     reader.readAsArrayBuffer(file);
 }

@@ -17,7 +17,11 @@ function base64ToUint8Array(uri) { // i.e. base64.b64_decode() in python
     return bytes;
 }
 
-zxing = ZXing();
+var zxing = null;
+ZXing().then(function(value) {
+    zxing = value;
+});
+
 function scanBarcode(canvasElement, format) {
 
     var imgWidth = canvasElement.width;
@@ -25,12 +29,15 @@ function scanBarcode(canvasElement, format) {
     var imageData = canvasElement.getContext('2d').getImageData(0, 0, imgWidth, imgHeight);
     var sourceBuffer = imageData.data;
 
-    var buffer = zxing._malloc(sourceBuffer.byteLength);
-    zxing.HEAPU8.set(sourceBuffer, buffer);
-    var result = zxing.readBarcodeFromPixmap(buffer, imgWidth, imgHeight, true, format);
-    zxing._free(buffer);
-    return result;
-
+    if (zxing != null) {
+        var buffer = zxing._malloc(sourceBuffer.byteLength);
+        zxing.HEAPU8.set(sourceBuffer, buffer);
+        var result = zxing.readBarcodeFromPixmap(buffer, imgWidth, imgHeight, true, format);
+        zxing._free(buffer);
+        return result;
+    } else {
+        return { error: "ZXing not yet initialized" };
+    }
 }
 
 function loadVideo() {
@@ -158,9 +165,6 @@ This is a simple demo of WebAssembly build (using Emcripten) of <a href="https:/
     <div id="outputMessage">No barcode detected.</div>
     <div hidden><b>Data:</b> <span id="outputData"></span></div>
   </div>
-  <script>
-
-  </script>
 </p>
 </body>
 </html>

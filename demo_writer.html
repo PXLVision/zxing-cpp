@@ -5,7 +5,10 @@
 <script src="base64.js"></script>
 <script>
 
-zxing = ZXing();
+var zxing = null;
+ZXing().then(function(value) {
+    zxing = value;
+});
 
 function generateBarcode() {
     var text = document.getElementById("input_text").value;
@@ -16,9 +19,14 @@ function generateBarcode() {
     var height = parseInt(document.getElementById("input_height").value);
     var eccLevel = parseInt(document.getElementById("input_ecclevel").value);
     
-    var result = zxing.generateBarcode(text, format, charset, margin, width, height, eccLevel);
-    if (result.pixmap) {
-        showImage(document.getElementById("write_result"), result.pixmap);
+    var result;
+    if (zxing != null) {
+        result = zxing.generateBarcode(text, format, charset, margin, width, height, eccLevel);
+    } else {
+        result = { error: "ZXing not yet initialized" };
+    }
+    if (result.image) {
+        showImage(document.getElementById("write_result"), result.image);
         result.delete();
     }
     else {
