@@ -33,38 +33,7 @@ function scanBarcode(canvasElement, format) {
 
 }
 
-</script>
-</head>
-<body>
-<h3>Read barcodes</h3>
-<p>
-This is a simple demo of WebAssembly build (using Emcripten) of <a href="https://github.com/nu-book/zxing-cpp">zxing-cpp</a>
-</p>
-<p></p>
-<div>
-Scan Format: <select id="scan_format">
-<option value="" selected="">Any</option>
-<option value="AZTEC">AZTEC</option>
-<option value="CODABAR">CODABAR</option>
-<option value="CODE_39">CODE_39</option>
-<option value="CODE_93">CODE_93</option>
-<option value="CODE_128">CODE_128</option>
-<option value="DATA_MATRIX">DATA_MATRIX</option>
-<option value="EAN_8">EAN_8</option>
-<option value="EAN_13">EAN_13</option>
-<option value="ITF">ITF</option>
-<option value="PDF_417">PDF_417</option>
-<option value="QR_CODE">QR_CODE</option>
-<option value="UPC_A">UPC_A</option>
-<option value="UPC_E">UPC_E</option>
-</select><br/>
-
-  <canvas id="canvas" hidden></canvas>
-  <div id="output" hidden>
-    <div id="outputMessage">No barcode detected.</div>
-    <div hidden><b>Data:</b> <span id="outputData"></span></div>
-  </div>
-  <script>
+function loadVideo() {
     var video = document.createElement("video");
     var canvasElement = document.getElementById("canvas");
     var canvas = canvasElement.getContext("2d");
@@ -72,24 +41,49 @@ Scan Format: <select id="scan_format">
     var outputContainer = document.getElementById("output");
     var outputMessage = document.getElementById("outputMessage");
     var outputData = document.getElementById("outputData");
+    var cameraSelect = document.getElementById("camera_select");
 
-    function drawLine(begin, end, color) {
-      canvas.beginPath();
-      canvas.moveTo(begin.x, begin.y);
-      canvas.lineTo(end.x, end.y);
-      canvas.lineWidth = 4;
-      canvas.strokeStyle = color;
-      canvas.stroke();
+    cameraSelect.onchange = function() {
+        startCameraWithDevice(cameraSelect.value);
+    };
+
+    var currentStream = null;
+
+    function stopCurentCamera() {
+      if (currentStream != null) {
+        currentStream.getTracks().forEach(track => {
+          track.stop();
+        });
+      }
     }
 
-    // Use facingMode: environment to attemt to get the front camera on phones
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
-      video.srcObject = stream;
-      video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
-      video.play();
-      requestAnimationFrame(tick);
-    });
+    var cameraStarted = false;
+    function startCameraWithDevice(cameraFacing) {
+      stopCurentCamera();
+      var facingMode = cameraFacing ? { exact: cameraFacing } : "environment";
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } }).then(function(stream) {
+        currentStream = stream;
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+        video.play();
+        if (!cameraStarted) {
+          cameraStarted = true;
+          requestAnimationFrame(tick);
+        }
+      });
+    }
 
+    startCameraWithDevice("");
+
+    // function drawLine(begin, end, color) {
+    //   canvas.beginPath();
+    //   canvas.moveTo(begin.x, begin.y);
+    //   canvas.lineTo(end.x, end.y);
+    //   canvas.lineWidth = 4;
+    //   canvas.strokeStyle = color;
+    //   canvas.stroke();
+    // }
+    
     function tick() {
       if (video.readyState === video.HAVE_ENOUGH_DATA) {
         canvasElement.hidden = false;
@@ -123,7 +117,50 @@ Scan Format: <select id="scan_format">
       }
       requestAnimationFrame(tick);
     }
-  </script>
+}
+</script>
+</head>
+<body onload="loadVideo()">
+<h3>Read barcodes</h3>
+<p>
+This is a simple demo of WebAssembly build (using Emcripten) of <a href="https://github.com/nu-book/zxing-cpp">zxing-cpp</a>
+</p>
+<p>
+  Camera:
+  <select id="camera_select">
+    <option value=""></option>
+    <option value="environment">Rear</option>
+    <option value="user">Front</option>
+  </select>
+  <br/><br/>
 
+  Scan Format:
+  <select id="scan_format">
+    <option value="" selected="">Any</option>
+    <option value="AZTEC">AZTEC</option>
+    <option value="CODABAR">CODABAR</option>
+    <option value="CODE_39">CODE_39</option>
+    <option value="CODE_93">CODE_93</option>
+    <option value="CODE_128">CODE_128</option>
+    <option value="DATA_MATRIX">DATA_MATRIX</option>
+    <option value="EAN_8">EAN_8</option>
+    <option value="EAN_13">EAN_13</option>
+    <option value="ITF">ITF</option>
+    <option value="PDF_417">PDF_417</option>
+    <option value="QR_CODE">QR_CODE</option>
+    <option value="UPC_A">UPC_A</option>
+    <option value="UPC_E">UPC_E</option>
+  </select>
+  <br/><br/>
+
+  <canvas id="canvas" hidden></canvas>
+  <div id="output" hidden>
+    <div id="outputMessage">No barcode detected.</div>
+    <div hidden><b>Data:</b> <span id="outputData"></span></div>
+  </div>
+  <script>
+
+  </script>
+</p>
 </body>
 </html>
