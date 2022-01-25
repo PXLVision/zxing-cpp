@@ -44,11 +44,11 @@ int CharacterCountBits(CodecMode mode, const Version& version)
 		i = 2;
 
 	switch (mode) {
-	case CodecMode::NUMERIC: return std::array{10, 12, 14}[i];
-	case CodecMode::ALPHANUMERIC: return std::array{9, 11, 13}[i];
-	case CodecMode::BYTE: return std::array{8, 16, 16}[i];
+	case CodecMode::NUMERIC: return std::array<int, 3>{10, 12, 14}[i];
+	case CodecMode::ALPHANUMERIC: return std::array<int, 3>{9, 11, 13}[i];
+	case CodecMode::BYTE: return std::array<int, 3>{8, 16, 16}[i];
 	case CodecMode::KANJI: [[fallthrough]];
-	case CodecMode::HANZI: return std::array{8, 10, 12}[i];
+	case CodecMode::HANZI: return std::array<int, 3>{8, 10, 12}[i];
 	default: return 0;
 	}
 }

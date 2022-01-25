@@ -267,7 +267,7 @@ static DetectorResult DetectOld(const BitMatrix& image)
 	// Point A and D are across the diagonal from one another,
 	// as are B and C. Figure out which are the solid black lines
 	// by counting transitions
-	std::array transitions = {
+	std::array<ResultPointsAndTransitions, 4> transitions = {
 		TransitionsBetween(image, pointA, pointB),
 		TransitionsBetween(image, pointA, pointC),
 		TransitionsBetween(image, pointB, pointD),
